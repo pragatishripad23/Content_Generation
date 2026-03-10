@@ -1,0 +1,134 @@
+{
+  "identity": {
+    "name": "SolisBoard",
+    "metaphor": "The Solar Command Center",
+    "tone": "Professional, High-Performance, Creative, Data-Driven",
+    "theme_mode": "dark",
+    "core_philosophy": "Precision meets Creativity. A tool that feels like a cockpit for social growth."
+  },
+  "design_system": {
+    "colors": {
+      "base": {
+        "background": "bg-zinc-950",
+        "foreground": "text-zinc-50",
+        "card": "bg-zinc-900/50",
+        "border": "border-zinc-800"
+      },
+      "brand": {
+        "primary": "bg-orange-600",
+        "primary_gradient": "from-orange-600 to-amber-500",
+        "secondary": "bg-blue-600",
+        "accent": "text-amber-400"
+      },
+      "functional": {
+        "success": "text-emerald-400",
+        "error": "text-rose-500",
+        "warning": "text-yellow-400",
+        "info": "text-sky-400"
+      }
+    },
+    "typography": {
+      "headings": {
+        "font_family": "Outfit, sans-serif",
+        "weights": "font-semibold, font-bold",
+        "tracking": "tracking-tight"
+      },
+      "body": {
+        "font_family": "DM Sans, sans-serif",
+        "weights": "font-normal, font-medium"
+      },
+      "mono": {
+        "font_family": "JetBrains Mono, monospace"
+      }
+    },
+    "spacing": {
+      "container_padding": "p-6 md:p-8 lg:p-12",
+      "element_gap": "gap-4 md:gap-6",
+      "radius": "rounded-lg"
+    }
+  },
+  "layout_strategies": {
+    "dashboard": {
+      "type": "Bento Grid",
+      "mode": "Mode B (High Density)",
+      "grid_cols": "grid-cols-1 md:grid-cols-4 lg:grid-cols-12",
+      "gap": "gap-4"
+    },
+    "content_creator": {
+      "type": "Split Screen",
+      "left_panel": "Input & Controls (w-1/3)",
+      "right_panel": "Live Preview (w-2/3)"
+    },
+    "analytics": {
+      "type": "Masonry/Dashboard",
+      "card_style": "Grid Borders"
+    }
+  },
+  "components": {
+    "cards": {
+      "style": "Grid Border",
+      "classes": "border border-zinc-800 bg-zinc-900/40 backdrop-blur-sm rounded-lg hover:border-zinc-700 transition-colors",
+      "active_state": "border-orange-500/50"
+    },
+    "buttons": {
+      "primary": "bg-orange-600 hover:bg-orange-500 text-white shadow-lg shadow-orange-900/20 font-medium px-6 py-2 rounded-md transition-all active:scale-95",
+      "secondary": "bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700 rounded-md px-4 py-2",
+      "ghost": "hover:bg-zinc-800/50 text-zinc-400 hover:text-white"
+    },
+    "inputs": {
+      "style": "Minimalist",
+      "classes": "bg-zinc-950/50 border-zinc-800 focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-all rounded-md"
+    },
+    "sidebar": {
+      "style": "Slim & Collapsible",
+      "classes": "border-r border-zinc-800 bg-zinc-950/95 backdrop-blur-md"
+    },
+    "charts": {
+      "library": "recharts",
+      "palette": ["#ea580c", "#3b82f6", "#10b981", "#8b5cf6", "#f43f5e"],
+      "tooltip_style": "bg-zinc-900/90 border border-zinc-800 shadow-xl rounded-md text-sm p-3"
+    }
+  },
+  "visual_enhancers": {
+    "glassmorphism": "backdrop-blur-md bg-zinc-900/60 border border-white/5",
+    "grain_overlay": "opacity-[0.03] pointer-events-none fixed inset-0 z-50 mix-blend-overlay",
+    "glow_effects": "shadow-[0_0_20px_-5px_rgba(249,115,22,0.3)]",
+    "borders": "border-zinc-800"
+  },
+  "assets": {
+    "avatars": [
+      "https://images.unsplash.com/photo-1570922743785-aa48950572a3?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85",
+      "https://images.unsplash.com/photo-1743633621322-644767cac042?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85"
+    ],
+    "campaign_thumbnails": [
+      "https://images.unsplash.com/photo-1759090889533-d04bac321eb6?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85",
+      "https://images.unsplash.com/photo-1759090888770-2f3e7833d806?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85",
+      "https://images.unsplash.com/photo-1760337741510-1a4661e036fa?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85",
+      "https://images.unsplash.com/photo-1642615698467-80ea8847e202?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85",
+      "https://images.unsplash.com/photo-1677843969396-c653089bb28e?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85",
+       "https://images.unsplash.com/photo-1752959855919-d37bc9c44ddc?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85"
+    ],
+    "generated_art_placeholders": [
+      "https://images.unsplash.com/photo-1743633621322-644767cac042?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85",
+      "https://images.unsplash.com/photo-1760841386196-32ab1aae90cc?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85",
+      "https://images.unsplash.com/photo-1723164909914-1fd480ec68ef?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85"
+    ]
+  },
+  "instructions_to_main_agent": [
+    "INSTALL FONTS: Add 'Outfit' and 'DM Sans' from Google Fonts immediately in index.html or CSS.",
+    "DARK MODE DEFAULT: Ensure the app defaults to dark mode class on the html/body tag.",
+    "NO PURPLE: Do not use the default shadcn purple/blue. Override with Orange/Zinc palette.",
+    "SIDEBAR: Create a persistent sidebar layout for the dashboard. Do not use top-nav only.",
+    "CHARTS: Use Recharts for the Analytics page. Style them to match the dark theme (no white backgrounds).",
+    "NOTIFICATIONS: Use 'Sonner' for toasts.",
+    "CALENDAR: Use 'react-big-calendar' or a custom grid for the Content Calendar if shadcn calendar is too small.",
+    "TESTING: Add data-testid to all interactive elements."
+  ],
+  "universal_guidelines": [
+    "Do not center align the app container.",
+    "Use 2-3x more spacing than typical designs.",
+    "Avoid generic 'AI' emojis.",
+    "Every interaction needs micro-animations (hover, focus, active).",
+    "Use glassmorphism effects with backdrop filters for overlays."
+  ]
+}
