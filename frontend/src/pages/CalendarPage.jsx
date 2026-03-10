@@ -146,28 +146,29 @@ export default function CalendarPage() {
             <DialogTrigger asChild>
               <Button data-testid="schedule-post-btn" className="bg-orange-600 hover:bg-orange-500 text-white"><Plus className="w-4 h-4 mr-2" /> Schedule Post</Button>
             </DialogTrigger>
-          <DialogContent className="bg-zinc-900 border-zinc-800 text-white">
-            <DialogHeader><DialogTitle className="font-[Outfit]">Schedule a Post</DialogTitle></DialogHeader>
-            <form onSubmit={handleSchedule} className="space-y-4 mt-2">
-              <div className="space-y-2">
-                <Label className="text-zinc-400 text-xs">Select Post</Label>
-                <Select value={form.post_id} onValueChange={(v) => setForm((p) => ({ ...p, post_id: v }))}>
-                  <SelectTrigger className="bg-zinc-950/50 border-zinc-800 text-white"><SelectValue placeholder="Choose a post..." /></SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-800 max-h-48">
-                    {postsList.filter((p) => p.status === "draft").map((p) => (
-                      <SelectItem key={p.id} value={p.id}>{p.caption?.substring(0, 50) || "Untitled"}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-zinc-400 text-xs">Date & Time</Label>
-                <Input type="datetime-local" value={form.scheduled_at} onChange={(e) => setForm((p) => ({ ...p, scheduled_at: e.target.value }))} className="bg-zinc-950/50 border-zinc-800 text-white" />
-              </div>
-              <Button type="submit" className="w-full bg-orange-600 hover:bg-orange-500 text-white">Schedule</Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+            <DialogContent className="bg-zinc-900 border-zinc-800 text-white">
+              <DialogHeader><DialogTitle className="font-[Outfit]">Schedule a Post</DialogTitle></DialogHeader>
+              <form onSubmit={handleSchedule} className="space-y-4 mt-2">
+                <div className="space-y-2">
+                  <Label className="text-zinc-400 text-xs">Select Post</Label>
+                  <Select value={form.post_id} onValueChange={(v) => setForm((p) => ({ ...p, post_id: v }))}>
+                    <SelectTrigger className="bg-zinc-950/50 border-zinc-800 text-white"><SelectValue placeholder="Choose a post..." /></SelectTrigger>
+                    <SelectContent className="bg-zinc-900 border-zinc-800 max-h-48">
+                      {postsList.filter((p) => p.status === "draft").map((p) => (
+                        <SelectItem key={p.id} value={p.id}>{p.caption?.substring(0, 50) || "Untitled"}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-zinc-400 text-xs">Date & Time</Label>
+                  <Input type="datetime-local" value={form.scheduled_at} onChange={(e) => setForm((p) => ({ ...p, scheduled_at: e.target.value }))} className="bg-zinc-950/50 border-zinc-800 text-white" />
+                </div>
+                <Button type="submit" className="w-full bg-orange-600 hover:bg-orange-500 text-white">Schedule</Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Optimal Times */}
