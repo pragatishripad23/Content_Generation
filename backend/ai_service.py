@@ -2,15 +2,90 @@ import os
 import asyncio
 import base64
 import uuid
+import json
 import logging
+import httpx
 from dotenv import load_dotenv
-from emergentintegrations.llm.chat import LlmChat, UserMessage
 
 load_dotenv()
 
 logger = logging.getLogger(__name__)
-EMERGENT_KEY = os.environ.get("EMERGENT_LLM_KEY")
+
+# API Keys
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
 FAL_KEY = os.environ.get("FAL_KEY")
+
+
+async def _call_anthropic(system_msg: str, user_msg: str) -> str:
+    """Call Claude API directly via httpx"""
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        response = await client.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={
+                "x-api-key": ANTHROPIC_API_KEY,
+                "anthropic-version": "2023-06-01",
+                "content-type": "application/json",
+            },
+            json={
+                "model": "claude-sonnet-4-5-20250929",
+                "max_tokens": 4096,
+                "system": system_msg,
+                "messages": [{"role": "user", "content": user_msg}],
+            },
+        )
+        response.raise_for_status()
+        data = response.json()
+        return data["content"][0]["text"]
+
+
+async def _call_openai(system_msg: str, user_msg: str) -> str:
+    """Call OpenAI API directly via httpx"""
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        response = await client.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {OPENAI_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": "gpt-4o",
+                "messages": [
+                    {"role": "system", "content": system_msg},
+                    {"role": "user", "content": user_msg},
+                ],
+            },
+        )
+        response.raise_for_status()
+        data = response.json()
+        return data["choices"][0]["message"]["content"]
+
+
+async def _call_gemini(system_msg: str, user_msg: str) -> str:
+    """Call Gemini API directly via httpx"""
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        response = await client.post(
+            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GOOGLE_API_KEY}",
+            headers={"Content-Type": "application/json"},
+            json={
+                "systemInstruction": {"parts": [{"text": system_msg}]},
+                "contents": [{"parts": [{"text": user_msg}]}],
+            },
+        )
+        response.raise_for_status()
+        data = response.json()
+        return data["candidates"][0]["content"]["parts"][0]["text"]
+
+
+def _parse_json_response(response: str) -> dict:
+    """Parse JSON from LLM response, handling code blocks"""
+    cleaned = response.strip()
+    if "```json" in cleaned:
+        cleaned = cleaned.split("```json")[1].split("```")[0]
+    elif "```" in cleaned:
+        cleaned = cleaned.split("```")[1].split("```")[0]
+    return json.loads(cleaned)
 
 
 async def generate_text_claude(brief: str, platform: str, tone: str, brand_voice: str = None) -> dict:
@@ -18,18 +93,10 @@ async def generate_text_claude(brief: str, platform: str, tone: str, brand_voice
         system_msg = f"""You are an expert social media copywriter. Generate a compelling {platform} post.
 Tone: {tone}. {"Brand voice: " + brand_voice if brand_voice else ""}
 Return ONLY a JSON object with keys: caption, hashtags (list), score (0-100 engagement potential)."""
-        chat = LlmChat(api_key=EMERGENT_KEY, session_id=str(uuid.uuid4()), system_message=system_msg)
-        chat.with_model("anthropic", "claude-sonnet-4-5-20250929")
-        msg = UserMessage(text=f"Create a {platform} post about: {brief}")
-        response = await chat.send_message(msg)
-        import json
+        user_msg = f"Create a {platform} post about: {brief}"
+        response = await _call_anthropic(system_msg, user_msg)
         try:
-            cleaned = response.strip()
-            if "```json" in cleaned:
-                cleaned = cleaned.split("```json")[1].split("```")[0]
-            elif "```" in cleaned:
-                cleaned = cleaned.split("```")[1].split("```")[0]
-            data = json.loads(cleaned)
+            data = _parse_json_response(response)
             return {"model": "claude-sonnet", "caption": data.get("caption", response), "hashtags": data.get("hashtags", []), "score": data.get("score", 75)}
         except json.JSONDecodeError:
             return {"model": "claude-sonnet", "caption": response, "hashtags": [], "score": 75}
@@ -43,18 +110,10 @@ async def generate_text_gpt4o(brief: str, platform: str, tone: str, brand_voice:
         system_msg = f"""You are an expert social media copywriter. Generate a compelling {platform} post.
 Tone: {tone}. {"Brand voice: " + brand_voice if brand_voice else ""}
 Return ONLY a JSON object with keys: caption, hashtags (list), score (0-100 engagement potential)."""
-        chat = LlmChat(api_key=EMERGENT_KEY, session_id=str(uuid.uuid4()), system_message=system_msg)
-        chat.with_model("openai", "gpt-4o")
-        msg = UserMessage(text=f"Create a {platform} post about: {brief}")
-        response = await chat.send_message(msg)
-        import json
+        user_msg = f"Create a {platform} post about: {brief}"
+        response = await _call_openai(system_msg, user_msg)
         try:
-            cleaned = response.strip()
-            if "```json" in cleaned:
-                cleaned = cleaned.split("```json")[1].split("```")[0]
-            elif "```" in cleaned:
-                cleaned = cleaned.split("```")[1].split("```")[0]
-            data = json.loads(cleaned)
+            data = _parse_json_response(response)
             return {"model": "gpt-4o", "caption": data.get("caption", response), "hashtags": data.get("hashtags", []), "score": data.get("score", 78)}
         except json.JSONDecodeError:
             return {"model": "gpt-4o", "caption": response, "hashtags": [], "score": 78}
@@ -68,18 +127,10 @@ async def generate_text_gemini(brief: str, platform: str, tone: str, brand_voice
         system_msg = f"""You are an expert social media copywriter. Generate a compelling {platform} post.
 Tone: {tone}. {"Brand voice: " + brand_voice if brand_voice else ""}
 Return ONLY a JSON object with keys: caption, hashtags (list), score (0-100 engagement potential)."""
-        chat = LlmChat(api_key=EMERGENT_KEY, session_id=str(uuid.uuid4()), system_message=system_msg)
-        chat.with_model("gemini", "gemini-2.5-flash")
-        msg = UserMessage(text=f"Create a {platform} post about: {brief}")
-        response = await chat.send_message(msg)
-        import json
+        user_msg = f"Create a {platform} post about: {brief}"
+        response = await _call_gemini(system_msg, user_msg)
         try:
-            cleaned = response.strip()
-            if "```json" in cleaned:
-                cleaned = cleaned.split("```json")[1].split("```")[0]
-            elif "```" in cleaned:
-                cleaned = cleaned.split("```")[1].split("```")[0]
-            data = json.loads(cleaned)
+            data = _parse_json_response(response)
             return {"model": "gemini", "caption": data.get("caption", response), "hashtags": data.get("hashtags", []), "score": data.get("score", 72)}
         except json.JSONDecodeError:
             return {"model": "gemini", "caption": response, "hashtags": [], "score": 72}
@@ -109,39 +160,52 @@ async def generate_caption_variations(caption: str, count: int = 5) -> list:
         system_msg = f"""Generate exactly {count} style variations of the given social media caption.
 Return a JSON array of objects, each with keys: variation_type (Short/Long/Question/Story/CTA-heavy/Humour), caption, hashtags (list).
 Only return the JSON array, nothing else."""
-        chat = LlmChat(api_key=EMERGENT_KEY, session_id=str(uuid.uuid4()), system_message=system_msg)
-        chat.with_model("anthropic", "claude-sonnet-4-5-20250929")
-        msg = UserMessage(text=f"Original caption: {caption}")
-        response = await chat.send_message(msg)
-        import json
-        cleaned = response.strip()
-        if "```json" in cleaned:
-            cleaned = cleaned.split("```json")[1].split("```")[0]
-        elif "```" in cleaned:
-            cleaned = cleaned.split("```")[1].split("```")[0]
-        return json.loads(cleaned)
+        user_msg = f"Original caption: {caption}"
+        response = await _call_anthropic(system_msg, user_msg)
+        return _parse_json_response(response)
     except Exception as e:
         logger.error(f"Variation error: {e}")
         return [{"variation_type": "Original", "caption": caption, "hashtags": []}]
 
 
 async def generate_image(prompt: str, brand_colors: list = None) -> dict:
+    """Generate image using Google Gemini Imagen API"""
     try:
         color_context = f" Use brand colors: {', '.join(brand_colors)}." if brand_colors else ""
-        system_msg = "You are an AI image generator for social media marketing. Create visually striking images."
-        chat = LlmChat(api_key=EMERGENT_KEY, session_id=str(uuid.uuid4()), system_message=system_msg)
-        chat.with_model("gemini", "gemini-3-pro-image-preview").with_params(modalities=["image", "text"])
-        msg = UserMessage(text=f"Generate a social media post image: {prompt}{color_context}")
-        text, images = await chat.send_message_multimodal_response(msg)
-        if images and len(images) > 0:
-            img_data = images[0]["data"]
-            mime = images[0].get("mime_type", "image/png")
-            data_url = f"data:{mime};base64,{img_data}"
-            return {"success": True, "image_url": data_url, "text": text, "model": "nano-banana"}
-        return {"success": False, "error": "No image generated", "model": "nano-banana"}
+        full_prompt = f"Generate a social media post image: {prompt}{color_context}"
+        
+        async with httpx.AsyncClient(timeout=90.0) as client:
+            response = await client.post(
+                f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key={GOOGLE_API_KEY}",
+                headers={"Content-Type": "application/json"},
+                json={
+                    "contents": [{"parts": [{"text": full_prompt}]}],
+                    "generationConfig": {"responseModalities": ["TEXT", "IMAGE"]},
+                },
+            )
+            response.raise_for_status()
+            data = response.json()
+            
+            parts = data.get("candidates", [{}])[0].get("content", {}).get("parts", [])
+            text_content = ""
+            image_data = None
+            
+            for part in parts:
+                if "text" in part:
+                    text_content = part["text"]
+                if "inlineData" in part:
+                    image_data = part["inlineData"]
+            
+            if image_data:
+                mime = image_data.get("mimeType", "image/png")
+                img_b64 = image_data.get("data", "")
+                data_url = f"data:{mime};base64,{img_b64}"
+                return {"success": True, "image_url": data_url, "text": text_content, "model": "gemini-imagen"}
+            
+            return {"success": False, "error": "No image generated", "model": "gemini-imagen"}
     except Exception as e:
         logger.error(f"Image gen error: {e}")
-        return {"success": False, "error": str(e), "model": "nano-banana"}
+        return {"success": False, "error": str(e), "model": "gemini-imagen"}
 
 
 async def generate_video(prompt: str, duration: str = "8s", aspect_ratio: str = "16:9") -> dict:
@@ -213,17 +277,9 @@ async def ideate_campaign(topic: str, objective: str, audience: str, duration_da
 Return a JSON object with keys:
 - concepts: array of 3-5 objects each with: name, angle, tagline, content_pillars (list), post_types (list)
 - calendar_outline: array of objects with: day (number), post_type, topic, platform"""
-        chat = LlmChat(api_key=EMERGENT_KEY, session_id=str(uuid.uuid4()), system_message=system_msg)
-        chat.with_model("anthropic", "claude-sonnet-4-5-20250929")
-        msg = UserMessage(text=f"Topic: {topic}\nObjective: {objective}\nAudience: {audience}\nDuration: {duration_days} days\n{'Brand voice: ' + brand_voice if brand_voice else ''}")
-        response = await chat.send_message(msg)
-        import json
-        cleaned = response.strip()
-        if "```json" in cleaned:
-            cleaned = cleaned.split("```json")[1].split("```")[0]
-        elif "```" in cleaned:
-            cleaned = cleaned.split("```")[1].split("```")[0]
-        return json.loads(cleaned)
+        user_msg = f"Topic: {topic}\nObjective: {objective}\nAudience: {audience}\nDuration: {duration_days} days\n{'Brand voice: ' + brand_voice if brand_voice else ''}"
+        response = await _call_anthropic(system_msg, user_msg)
+        return _parse_json_response(response)
     except Exception as e:
         logger.error(f"Ideation error: {e}")
         return {"concepts": [], "calendar_outline": [], "error": str(e)}
@@ -233,17 +289,9 @@ async def analyze_performance(metrics_json: dict, period: str = "7d") -> dict:
     try:
         system_msg = """You are a social media analytics expert. Analyze the performance data.
 Return a JSON object with keys: insights (list of strings), patterns (list), anomalies (list), recommendations (list)."""
-        chat = LlmChat(api_key=EMERGENT_KEY, session_id=str(uuid.uuid4()), system_message=system_msg)
-        chat.with_model("anthropic", "claude-sonnet-4-5-20250929")
-        import json
-        msg = UserMessage(text=f"Period: {period}\nMetrics: {json.dumps(metrics_json)}")
-        response = await chat.send_message(msg)
-        cleaned = response.strip()
-        if "```json" in cleaned:
-            cleaned = cleaned.split("```json")[1].split("```")[0]
-        elif "```" in cleaned:
-            cleaned = cleaned.split("```")[1].split("```")[0]
-        return json.loads(cleaned)
+        user_msg = f"Period: {period}\nMetrics: {json.dumps(metrics_json)}"
+        response = await _call_anthropic(system_msg, user_msg)
+        return _parse_json_response(response)
     except Exception as e:
         logger.error(f"Analysis error: {e}")
         return {"insights": [], "patterns": [], "anomalies": [], "recommendations": [], "error": str(e)}
@@ -253,17 +301,9 @@ async def generate_weekly_report(week_data: dict) -> dict:
     try:
         system_msg = """You are a social media performance analyst. Generate a comprehensive weekly report.
 Return a JSON object with: summary (string), highlights (list), top_posts (list of descriptions), underperformers (list), growth_metrics (object), sentiment_overview (string), competitor_snapshot (string), recommendations (list), next_week_plan (list)."""
-        chat = LlmChat(api_key=EMERGENT_KEY, session_id=str(uuid.uuid4()), system_message=system_msg)
-        chat.with_model("anthropic", "claude-sonnet-4-5-20250929")
-        import json
-        msg = UserMessage(text=f"Week data:\n{json.dumps(week_data)}")
-        response = await chat.send_message(msg)
-        cleaned = response.strip()
-        if "```json" in cleaned:
-            cleaned = cleaned.split("```json")[1].split("```")[0]
-        elif "```" in cleaned:
-            cleaned = cleaned.split("```")[1].split("```")[0]
-        return json.loads(cleaned)
+        user_msg = f"Week data:\n{json.dumps(week_data)}"
+        response = await _call_anthropic(system_msg, user_msg)
+        return _parse_json_response(response)
     except Exception as e:
         logger.error(f"Report error: {e}")
         return {"summary": "Error generating report", "error": str(e)}
@@ -273,17 +313,9 @@ async def classify_sentiment(comments: list) -> list:
     try:
         system_msg = """You are a sentiment analysis expert. Classify each comment.
 Return a JSON array of objects with keys: text, sentiment (positive/negative/neutral), score (0-100)."""
-        chat = LlmChat(api_key=EMERGENT_KEY, session_id=str(uuid.uuid4()), system_message=system_msg)
-        chat.with_model("anthropic", "claude-sonnet-4-5-20250929")
-        import json
-        msg = UserMessage(text=f"Classify these comments:\n{json.dumps(comments)}")
-        response = await chat.send_message(msg)
-        cleaned = response.strip()
-        if "```json" in cleaned:
-            cleaned = cleaned.split("```json")[1].split("```")[0]
-        elif "```" in cleaned:
-            cleaned = cleaned.split("```")[1].split("```")[0]
-        return json.loads(cleaned)
+        user_msg = f"Classify these comments:\n{json.dumps(comments)}"
+        response = await _call_anthropic(system_msg, user_msg)
+        return _parse_json_response(response)
     except Exception as e:
         logger.error(f"Sentiment error: {e}")
         return [{"text": c, "sentiment": "neutral", "score": 50} for c in comments]
