@@ -198,20 +198,43 @@ export default function CampaignDetailPage() {
             </div>
 
             {ideation.calendar_outline && ideation.calendar_outline.length > 0 && (
-              <div className="mt-4">
+              <div className="mt-6">
                 <h3 className="text-sm font-semibold text-zinc-300 font-[Outfit] mb-3 flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-blue-400" /> Calendar Outline
+                  <Calendar className="w-4 h-4 text-blue-400" /> 30-Day Content Calendar
                 </h3>
-                <div className="overflow-x-auto">
-                  <div className="flex gap-2 pb-2">
-                    {ideation.calendar_outline.slice(0, 14).map((item, i) => (
-                      <div key={i} className="shrink-0 w-32 border border-zinc-800 rounded-lg p-3 bg-zinc-900/30">
-                        <p className="text-xs font-bold text-orange-400 mb-1">Day {item.day}</p>
-                        <p className="text-xs text-zinc-300 truncate">{item.topic}</p>
-                        <p className="text-[10px] text-zinc-500 mt-1">{item.post_type} · {item.platform}</p>
+                <div className="grid grid-cols-7 gap-2 mb-2">
+                  {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+                    <div key={d} className="text-[10px] text-zinc-500 text-center font-semibold py-1">{d}</div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-7 gap-2">
+                  {ideation.calendar_outline.map((item, i) => {
+                    const typeColors = {
+                      carousel: "border-purple-500/40 bg-purple-500/5",
+                      video: "border-blue-500/40 bg-blue-500/5",
+                      image: "border-emerald-500/40 bg-emerald-500/5",
+                      story: "border-pink-500/40 bg-pink-500/5",
+                      reel: "border-rose-500/40 bg-rose-500/5",
+                    };
+                    const colorClass = typeColors[item.post_type?.toLowerCase()] || "border-zinc-800 bg-zinc-900/30";
+                    return (
+                      <div key={i} className={`border rounded-lg p-2 min-h-[80px] ${colorClass} hover:border-orange-500/50 transition-colors cursor-pointer group`}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] font-bold text-orange-400">Day {item.day}</span>
+                          <span className="text-[8px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 capitalize">{item.platform}</span>
+                        </div>
+                        <p className="text-[10px] text-zinc-300 line-clamp-2 leading-tight">{item.topic}</p>
+                        <p className="text-[8px] text-zinc-500 mt-1 capitalize">{item.post_type}</p>
                       </div>
-                    ))}
-                  </div>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center gap-4 mt-4 text-[10px]">
+                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded border border-purple-500/40 bg-purple-500/10"></span> Carousel</span>
+                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded border border-blue-500/40 bg-blue-500/10"></span> Video</span>
+                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded border border-emerald-500/40 bg-emerald-500/10"></span> Image</span>
+                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded border border-pink-500/40 bg-pink-500/10"></span> Story</span>
+                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded border border-rose-500/40 bg-rose-500/10"></span> Reel</span>
                 </div>
               </div>
             )}

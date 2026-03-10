@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { schedules, posts as postsApi } from "@/lib/api";
-import { Calendar as CalIcon, Clock, Plus, Trash2, Loader2, Zap } from "lucide-react";
+import { Calendar as CalIcon, Clock, Plus, Trash2, Loader2, Zap, ToggleLeft, ToggleRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -21,6 +22,8 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({ post_id: "", scheduled_at: "", timezone: "UTC" });
+  const [autoSchedule, setAutoSchedule] = useState(false);
+  const [autoScheduling, setAutoScheduling] = useState(false);
   const brandId = user?.brand?.id;
 
   const load = async () => {
@@ -54,6 +57,57 @@ export default function CalendarPage() {
     load();
   };
 
+  // Auto-schedule functionality
+  const handleAutoSchedule = async (enabled) => {
+    setAutoSchedule(enabled);
+    if (enabled) {
+      setAutoScheduling(true);
+      const draftPosts = postsList.filter(p => p.status === "draft" && !scheds.some(s => s.post_id === p.id));
+      
+      if (draftPosts.length === 0) {
+        toast.info("No draft posts to schedule");
+        setAutoSchedule(false);
+        setAutoScheduling(false);
+        return;
+      }
+
+      // Get optimal times for the primary platform
+      const platformTimes = Object.entries(optTimes);
+      const today = new Date();
+      let scheduledCount = 0;
+
+      for (let i = 0; i < draftPosts.length; i++) {
+        const post = draftPosts[i];
+        const platform = post.platforms?.[0] || "instagram";
+        const times = optTimes[platform] || ["09:00", "12:00", "18:00"];
+        const timeSlot = times[i % times.length];
+        
+        // Schedule for the next available day
+        const scheduleDate = new Date(today);
+        scheduleDate.setDate(today.getDate() + i + 1);
+        const [hours, mins] = timeSlot.split(":");
+        scheduleDate.setHours(parseInt(hours), parseInt(mins), 0, 0);
+        
+        try {
+          await schedules.create({
+            post_id: post.id,
+            scheduled_at: scheduleDate.toISOString().slice(0, 16),
+            timezone: "UTC"
+          });
+          scheduledCount++;
+        } catch (err) {
+          console.error("Failed to schedule post:", err);
+        }
+      }
+
+      toast.success(`Auto-scheduled ${scheduledCount} posts at optimal times!`);
+      setAutoScheduling(false);
+      load();
+    } else {
+      toast.info("Auto-schedule disabled");
+    }
+  };
+
   // Build calendar grid for current week
   const today = new Date();
   const weekStart = new Date(today);
@@ -76,10 +130,22 @@ export default function CalendarPage() {
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight font-[Outfit]">Content Calendar</h1>
           <p className="text-zinc-500 mt-1 text-sm">Schedule and manage your social media posts</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button data-testid="schedule-post-btn" className="bg-orange-600 hover:bg-orange-500 text-white"><Plus className="w-4 h-4 mr-2" /> Schedule Post</Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-3">
+          {/* Auto-Schedule Toggle */}
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-800">
+            <span className="text-xs text-zinc-400">Auto-Schedule</span>
+            <Switch 
+              checked={autoSchedule} 
+              onCheckedChange={handleAutoSchedule}
+              disabled={autoScheduling}
+              className="data-[state=checked]:bg-orange-600"
+            />
+            {autoScheduling && <Loader2 className="w-3 h-3 animate-spin text-orange-500" />}
+          </div>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button data-testid="schedule-post-btn" className="bg-orange-600 hover:bg-orange-500 text-white"><Plus className="w-4 h-4 mr-2" /> Schedule Post</Button>
+            </DialogTrigger>
           <DialogContent className="bg-zinc-900 border-zinc-800 text-white">
             <DialogHeader><DialogTitle className="font-[Outfit]">Schedule a Post</DialogTitle></DialogHeader>
             <form onSubmit={handleSchedule} className="space-y-4 mt-2">

@@ -2,7 +2,7 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import {
   LayoutDashboard, Megaphone, PenTool, Image, Calendar, BarChart3,
-  Users, TrendingUp, Swords, MessageCircle, Bell, FileText, Settings, LogOut, Sun,
+  Users, TrendingUp, Swords, MessageCircle, Bell, FileText, Settings, LogOut, Sun, Layers,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -16,6 +16,7 @@ const navSections = [
       { to: "/", icon: LayoutDashboard, label: "Dashboard", end: true },
       { to: "/campaigns", icon: Megaphone, label: "Campaigns" },
       { to: "/content/create", icon: PenTool, label: "Content Creator" },
+      { to: "/carousel", icon: Layers, label: "Carousel Builder" },
       { to: "/media", icon: Image, label: "Media Generator" },
       { to: "/calendar", icon: Calendar, label: "Calendar" },
     ],

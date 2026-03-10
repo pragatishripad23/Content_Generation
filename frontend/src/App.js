@@ -8,6 +8,7 @@ import CampaignsPage from "@/pages/CampaignsPage";
 import CampaignDetailPage from "@/pages/CampaignDetailPage";
 import ContentCreatorPage from "@/pages/ContentCreatorPage";
 import MediaGeneratorPage from "@/pages/MediaGeneratorPage";
+import CarouselBuilderPage from "@/pages/CarouselBuilderPage";
 import CalendarPage from "@/pages/CalendarPage";
 import AnalyticsPage from "@/pages/AnalyticsPage";
 import AudiencePage from "@/pages/AudiencePage";
@@ -45,6 +46,7 @@ function AppRoutes() {
         <Route path="campaigns" element={<CampaignsPage />} />
         <Route path="campaigns/:id" element={<CampaignDetailPage />} />
         <Route path="content/create" element={<ContentCreatorPage />} />
+        <Route path="carousel" element={<CarouselBuilderPage />} />
         <Route path="media" element={<MediaGeneratorPage />} />
         <Route path="calendar" element={<CalendarPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
